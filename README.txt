@@ -3,13 +3,13 @@ Contact Info
 
 Group Members & Email Addresses:
 
-    Person 1, person1@uky.edu
+    Brooke McWilliams, brmc230@uky.edu
     Person 2, person2@uky.edu
 
 Versioning
 ==========
 
-Github Link: 
+Github Link: https://github.com/brmc230/Pong-Project
 
 General Info
 ============
