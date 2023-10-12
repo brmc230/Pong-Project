@@ -4,7 +4,7 @@ Contact Info
 Group Members & Email Addresses:
 
     Brooke McWilliams, brmc230@uky.edu
-    Person 2, person2@uky.edu
+    Morgan Miller, mdmi240@uky.edu
 
 Versioning
 ==========
