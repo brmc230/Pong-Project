@@ -1,8 +1,15 @@
 # =================================================================================================
-# Contributing Authors:	    <Anyone who touched the code>
-# Email Addresses:          <Your uky.edu email addresses>
-# Date:                     <The date the file was last edited>
-# Purpose:                  <How this file contributes to the project>
+# Contributing Authors:	    Brooke McWilliams
+#                           
+#
+# Email Addresses:          brmc230@uky.edu
+#
+#                           
+# Date:                     10/22/2023
+#
+# Purpose:                  Code that implements the server side of the Pong game and interacts with
+#                           the client
+#
 # Misc:                     <Not Required.  Anything else you might want to include>
 # =================================================================================================
 
