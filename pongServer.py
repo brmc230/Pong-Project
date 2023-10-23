@@ -9,6 +9,8 @@
 # Misc:                     
 # =================================================================================================
 
+from helperFunctions import *
+from pongClient import *
 import socket
 import threading
 
@@ -21,16 +23,26 @@ import threading
 # Make precautions for if someone enters the wrong IP or port and if a 3rd person attempts to 
 #   connect to an already full game
 
-# Dont know yet about getting this info, just rolling with it
-host = ""
-ip = ""
+# Initialize the server specs, don't know if this is 100% correct yet
+server_host = "localhost"
+server_ip = 12321
 
-# Create the server
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # For local host use
-server.bind((host, ip))
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # For local host use
+server_socket.bind((server_host, server_ip))
+
+# Listen for clients
+server_socket.listen(5)
 
 # Getting client information
-client_socket, client_ip = server.accept()
+semaphore = threading.Semaphore()
+connected_clients = 0
+minimum_clients = 2
+client_sockets = []
 
+while connected_clients < minimum_clients:
+    client_socket, client_ip = server_socket.accept()
 
+    # Handle the clients with threads
+    handle_client = threading.Thread(target=handle_client, args=(client_socket,))
+    handle_client.start()
