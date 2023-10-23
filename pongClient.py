@@ -1,15 +1,17 @@
 # =================================================================================================
-# Contributing Authors:	    <Anyone who touched the code>
-# Email Addresses:          <Your uky.edu email addresses>
-# Date:                     <The date the file was last edited>
-# Purpose:                  <How this file contributes to the project>
-# Misc:                     <Not Required.  Anything else you might want to include>
+# Contributing Authors:	    Brooke McWilliams
+# Email Addresses:          brmc230@uky.edu
+# Date:                     10/23/2023
+# Purpose:                  This file implements the client side of the pong game in connection to
+#                           the server
+# Misc:                     
 # =================================================================================================
 
 import pygame
 import tkinter as tk
 import sys
 import socket
+import threading
 
 from assets.code.helperCode import *
 
