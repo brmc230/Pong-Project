@@ -160,7 +160,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         sync += 1
         # =========================================================================================
         # Send your server update here at the end of the game loop to sync your game with your
-        #  opponent's game
+        #  opponent's game 
         # Whoever is behind needs to be updated to reflect correct balls position
         # Same logic with paddles
         # =========================================================================================
@@ -185,10 +185,15 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((ip, int(port)))
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
+
     client.send(("join_server").encode())
+
+    errorLabel.config(text="Waiting for another player to join . . .")
+    errorLabel.update()
 
     response = client.recv(1024).decode()
     join_server_data = json.loads(response)
+
     # I don't understand why were asking the server for our own screen width and height?
     screenWidth = join_server_data["screen_width"]
     screenHeight = join_server_data["screen_height"]
@@ -197,8 +202,8 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # If you have messages you'd like to show the user use the errorLabel widget like so
     errorLabel.config(text=f"Connection Accepted. Your input: IP: {ip}, Port: {port}")
     # You may or may not need to call this, depending on how many times you update the label
-    errorLabel.update()     
-
+    errorLabel.update() 
+   
     # Close this window and start the game with the info passed to you from the server
     app.withdraw()     # Hides the window (we'll kill it later)
     playGame(screenWidth, screenHeight, playerPaddle, client)  # User will be either left or right paddle ("left"|"right")

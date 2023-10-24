@@ -118,9 +118,6 @@ while connected_players < 2:
     else:
         game_state[client_ID]["paddle"] = "left"
 
-    if len(client_sockets_dict) < 2:
-        print("Waiting for another player to join. . .")
-
 # Handle the clients with threads
 handle_client = threading.Thread(target=handle_client, args=(client_ID,))
 handle_client.start()
