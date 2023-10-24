@@ -1,17 +1,17 @@
-# =================================================================================================
+# ======================================================================================================================= #
 # Contributing Authors:	    Brooke McWilliams
 # Email Addresses:          brmc230@uky.edu
 # Date:                     10/23/2023
 # Purpose:                  This file implements the client side of the pong game in connection to
 #                           the server
 # Misc:                     
-# =================================================================================================
+# ======================================================================================================================= #
 
 import pygame
 import tkinter as tk
 import sys
 import socket
-from helperFunctions import *
+import json
 from assets.code.helperCode import *
 
 
@@ -85,7 +85,11 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Your code here to send an update to the server on your paddle's information,
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
-        update_server(playerPaddleObj, ball, lScore, rScore, client)
+        client_game_data = {  "playerPaddle": playerPaddleObj,
+                                "ball": ball,
+                                "lScore": lScore,
+                                "rScore": rScore }
+        client.send(json.dumps(client_game_data).encode())        
         
         # =========================================================================================
 
@@ -179,19 +183,26 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((ip, port))
+    client.connect((ip, int(port)))
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
+    client.send(("join_server").encode())
 
+    response = client.recv(1024).decode()
+    join_server_data = json.loads(response)
+    # I don't understand why were asking the server for our own screen width and height?
+    screenWidth = join_server_data["screen_width"]
+    screenHeight = join_server_data["screen_height"]
+    playerPaddle = join_server_data["player_paddle"]
 
     # If you have messages you'd like to show the user use the errorLabel widget like so
-    errorLabel.config(text=f"Some update text. You input: IP: {ip}, Port: {port}")
+    errorLabel.config(text=f"Connection Accepted. Your input: IP: {ip}, Port: {port}")
     # You may or may not need to call this, depending on how many times you update the label
     errorLabel.update()     
 
     # Close this window and start the game with the info passed to you from the server
-    # app.withdraw()     # Hides the window (we'll kill it later)
-    # playGame(screenWidth, screenHeight, ("left"|"right"), client)  # User will be either left or right paddle
-    # app.quit()         # Kills the window
+    app.withdraw()     # Hides the window (we'll kill it later)
+    playGame(screenWidth, screenHeight, playerPaddle, client)  # User will be either left or right paddle ("left"|"right")
+    app.quit()         # Kills the window
 
 
 # This displays the opening screen, you don't need to edit this (but may if you like)
