@@ -21,6 +21,7 @@ Install Instructions
 Run the following line to install the required libraries for this project:
 
 `pip3 install -r requirements.txt`
+`pip install pyautogui`
 
 Known Bugs
 ==========
