@@ -86,6 +86,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
         client_game_data = {  "playerPaddle": playerPaddleObj,
+                                "opPaddle" : opponentPaddleObj,
                                 "ball": ball,
                                 "lScore": lScore,
                                 "rScore": rScore,
@@ -164,10 +165,24 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         #  opponent's game 
         # Whoever is behind needs to be updated to reflect correct balls position
         # Same logic with paddles
+
+        client.send(("server_update").encode())
+        response = client.recv(1024).decode()
+        response_data = json.loads(response)
+
+        for key, value in response_data.items():
+            if key == "paddle_locOP":
+                opponentPaddleObj = value
+            elif key == "ball":
+                ball = value
+            elif key == "lScore":
+                lScore = value
+            elif key == "rScore":
+                rScore = value
+            elif key == "sync":
+                sync = value
+
         # =========================================================================================
-
-
-
 
 # This is where you will connect to the server to get the info required to call the game loop.  Mainly
 # the screen width, height and player paddle (either "left" or "right")
