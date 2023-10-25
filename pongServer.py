@@ -46,8 +46,9 @@ def handle_client(client_ID:str) -> None:
 
                 # Update game state conditions here and call appropriate functions
                 if client_request == "join_server":
-                    join_server_response(client_sockets_dict[client_ID])
-
+                    join_server_response(client_ID)
+                elif client_request == "client_game_data":
+                    update_client_data(client_ID, client_request)
 
 
 
@@ -73,13 +74,35 @@ def handle_client(client_ID:str) -> None:
 # Pre:          Client runs the joinServer function
 # Post:         Server sends corresponding information back to client
 
-def join_server_response(client_soc:socket.socket) -> None:
+def join_server_response(client:str) -> None:
+    client_soc = client_sockets_dict[client]
+    
     join_server_response_data = {   "screen_width": 1920,
                                     "screen_height": 1080,
                                     "player_paddle": game_state[client_ID]["paddle"] }
 # Don't know what to send here because I don't yet know how to receieve it or what im actually sending?
     client_soc.send(json.dumps(join_server_response_data).encode())
 
+# ======================================================================================================================= #
+
+# Author:       Brooke McWilliams
+# Purpose:      Handle if the client sends thier game data
+# Pre:          Client sends an update of their data
+# Post:         Server updates corresponding values for the client
+
+def update_client_data(client_ID:str, data:dict) -> None:
+    for key in data:
+        if key == "playerPaddle":
+            game_state[client_ID]["paddle_loc"] = data["playerPaddle"]
+        elif key == "ball":
+            game_state[client_ID]["ball_loc"] = data["ball"]
+        elif key == "lScore":
+            game_state[client_ID]["lScore"] = data["lScore"]
+        elif key == "rScore":
+            game_state[client_ID]["rScore"] = data["rScore"]
+        elif key == "sync":
+            game_state[client_ID]["sync"] = data["sync"]
+        
 # ======================================================================================================================= #
 
 # Initialize the server specs, don't know if this is 100% correct yet
@@ -112,9 +135,19 @@ while connected_players < 2:
 
     if not first_client:
         game_state[client_ID]["paddle"] = "right"
+        game_state[client_ID]["paddle_loc"] = ""
+        game_state[client_ID]["ball_loc"]= ""
+        game_state[client_ID]["rScore"] = 0
+        game_state[client_ID]["lScore"] = 0
+        game_state[client_ID]["sync"] = 0
         first_client = True
     else:
         game_state[client_ID]["paddle"] = "left"
+        game_state[client_ID]["paddle_loc"] = ""
+        game_state[client_ID]["ball_loc"]= ""
+        game_state[client_ID]["rScore"] = 0
+        game_state[client_ID]["lScore"] = 0
+        game_state[client_ID]["sync"] = 0
     connected_players += 1
 
 while game_over is False:
