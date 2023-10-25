@@ -30,12 +30,13 @@ import pyautogui
 
 def handle_client(client_ID:str) -> None: 
     client = client_sockets_dict[client_ID]
-
+    connected = True
     try:
-        while True: 
+        while connected: 
             response = client.recv(1024).decode()
             # Client disconnected
             if not response:
+                connected = False
                 break
 
             # Ensure exclusive access with the semaphore
@@ -46,6 +47,9 @@ def handle_client(client_ID:str) -> None:
                 # Update game state conditions here and call appropriate functions
                 if client_request == "join_server":
                     join_server_response(client_sockets_dict[client_ID])
+
+
+
 
 
 
@@ -62,9 +66,6 @@ def handle_client(client_ID:str) -> None:
 
     except Exception as e:
         print(f"Client connection error: {str(e)}")
-    finally:
-        del client_sockets_dict[client_ID]
-        client_socket.close()
 
 # ======================================================================================================================= #
 # Author:       Brooke McWilliams
@@ -78,10 +79,6 @@ def join_server_response(client_soc:socket.socket) -> None:
                                     "player_paddle": game_state[client_ID]["paddle"] }
 # Don't know what to send here because I don't yet know how to receieve it or what im actually sending?
     client_soc.send(json.dumps(join_server_response_data).encode())
-
-
-
-
 
 # ======================================================================================================================= #
 
@@ -102,6 +99,7 @@ client_sockets_dict = dict()
 first_client = False
 game_state = dict()
 connected_players = 0
+game_over = False
 
 while connected_players < 2:
     # Accept connection from the client
@@ -117,8 +115,10 @@ while connected_players < 2:
         first_client = True
     else:
         game_state[client_ID]["paddle"] = "left"
+    connected_players += 1
 
-# Handle the clients with threads
-handle_client = threading.Thread(target=handle_client, args=(client_ID,))
-handle_client.start()
+while game_over is False:
+    # Handle the clients with threads
+    handle_client = threading.Thread(target=handle_client, args=(client_ID,))
+    handle_client.start()
 
