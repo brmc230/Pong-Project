@@ -1,4 +1,3 @@
-# You don't need to edit this file at all unless you really want to
 import pygame
 
 # This draws the score to the screen
