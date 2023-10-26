@@ -111,6 +111,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             textRect = textSurface.get_rect()
             textRect.center = ((screenWidth/2), screenHeight/2)
             winMessage = screen.blit(textSurface, textRect)
+            client.send(("game_over").encode())
         else:
 
             # ==== Ball Logic =====================================================================
@@ -165,7 +166,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         #  opponent's game 
         # Whoever is behind needs to be updated to reflect correct balls position
         # Same logic with paddles
-
         client.send(("server_update").encode())
         response = client.recv(1024).decode()
         response_data = json.loads(response)
@@ -201,16 +201,15 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((ip, int(port)))
     # Get the required information from your server (screen width, height & player paddle, "left or "right)
-
     client.send(("join_server").encode())
 
+    # Display that the game is waiting for the second player to join
     errorLabel.config(text="Waiting for another player to join . . .")
     errorLabel.update()
-
+    # Receive the server response and collect the playGame data
     response = client.recv(1024).decode()
     join_server_data = json.loads(response)
 
-    # I don't understand why were asking the server for our own screen width and height?
     screenWidth = join_server_data["screen_width"]
     screenHeight = join_server_data["screen_height"]
     playerPaddle = join_server_data["player_paddle"]

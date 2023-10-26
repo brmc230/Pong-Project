@@ -11,7 +11,6 @@
 import json
 import socket
 import threading
-import pyautogui
 
 # Use this file to write your server logic
 # You will need to support at least two clients
@@ -28,7 +27,7 @@ import pyautogui
 # Pre:          This function carries out the instructions for the client
 # Post:         Sends the client the information it was asking for
 
-def handle_client(client_soc:socket.socket, client:str) -> None: 
+def handle_client(client_soc:socket.socket, client:str, semaphore:threading.Semaphore) -> None: 
     connected = True
     try:
         while connected: 
@@ -44,15 +43,14 @@ def handle_client(client_soc:socket.socket, client:str) -> None:
                 client_request = json.loads(response)
 
                 # Update game state conditions here and call appropriate functions
-                if client_request == "join_server":
-                    join_server_response(client_soc)
-                elif client_request == "client_game_data":
+                if client_request == "client_game_data":
                     update_client_data(client, client_request)
                 elif client_request == "server_update":
                     server_update_response(client_sockets_dict, client, client_soc)
-
-
-
+                elif client_request == "game_over":
+                    connected = False 
+                    semaphore.release()
+                    break
 
                 # Update other clients values
                 for key, value in client_sockets_dict.items():
@@ -74,10 +72,10 @@ def handle_client(client_soc:socket.socket, client:str) -> None:
 # Pre:          Client runs the joinServer function
 # Post:         Server sends corresponding information back to client
 
-def join_server_response(client_soc:socket.socket) -> None:
+def join_server_response(client_soc:socket.socket, client:str) -> None:
     join_server_response_data = {   "screen_width": 1600,
                                     "screen_height": 900,
-                                    "player_paddle": game_state[client_ID]["paddle"] }
+                                    "player_paddle": game_state[client]["paddle"] }
     client_soc.send(json.dumps(join_server_response_data).encode())
 
 # ======================================================================================================================= #
@@ -143,45 +141,52 @@ server_socket.bind((server_host, server_ip))
 # Listen for clients
 server_socket.listen(5)
 
-semaphore = threading.Semaphore()
+semaphore = threading.Semaphore(1)
 client_sockets_dict = dict()
-first_client = False
 game_state = dict()
 connected_players = 0
 game_over = False
+first_client = True
 
-while connected_players < 2:
+while connected_players < 1:
     # Accept connection from the client
     client_socket, client_ip = server_socket.accept() 
     # Give the client a unique ID to reference and add to the clients dictionary
     client_ID = f"client_{client_ip[0]}_{client_ip[1]}"
     client_sockets_dict[client_ID] = client_socket
-
-    game_state = {key: {} for key in client_sockets_dict.keys()}
-
-    if not first_client:
-        game_state[client_ID]["paddle"] = "right"
-        game_state[client_ID]["paddle_loc"] = ""
-        game_state[client_ID]["paddle_locOP"] = ""
-        game_state[client_ID]["ball_loc"]= ""
-        game_state[client_ID]["rScore"] = 0
-        game_state[client_ID]["lScore"] = 0
-        game_state[client_ID]["sync"] = 0
-        first_client = True
-    else:
-        game_state[client_ID]["paddle"] = "left"
-        game_state[client_ID]["paddle_loc"] = ""
-        game_state[client_ID]["paddle_locOP"] = ""
-        game_state[client_ID]["ball_loc"]= ""
-        game_state[client_ID]["rScore"] = 0
-        game_state[client_ID]["lScore"] = 0
-        game_state[client_ID]["sync"] = 0
     connected_players += 1
+
+# Create the game state dict to keep track of the game for each client
+game_state = {key: {} for key in client_sockets_dict.keys()}
+
+
+for key in client_sockets_dict.keys():
+    if first_client is True:
+        game_state[key]["paddle"] = "right"
+        game_state[key]["paddle_loc"] = ""
+        game_state[key]["paddle_locOP"] = ""
+        game_state[key]["ball_loc"]= ""
+        game_state[key]["rScore"] = 0
+        game_state[key]["lScore"] = 0
+        game_state[key]["sync"] = 0
+        first_client = False
+    else:
+        game_state[key]["paddle"] = "left"
+        game_state[key]["paddle_loc"] = ""
+        game_state[key]["paddle_locOP"] = ""
+        game_state[key]["ball_loc"]= ""
+        game_state[key]["rScore"] = 0
+        game_state[key]["lScore"] = 0
+        game_state[key]["sync"] = 0
+
+# Get specs for the joinServer function to relay back to client
+for key, value in client_sockets_dict.items():
+    join_server_response(value, key)
 
 while game_over is False:
     # Handle the clients with threads
     for key, value in client_sockets_dict.items():
-        handle_client = threading.Thread(target=handle_client, args=(value, key ))
+        handle_client = threading.Thread(target=handle_client, args=(value, key, semaphore ))
         handle_client.start()
 
 for value in client_sockets_dict.values():
