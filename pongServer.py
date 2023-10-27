@@ -32,15 +32,15 @@ def handle_client(client_soc:socket.socket, client:str, semaphore:threading.Sema
     try:
         while connected: 
             response = client_soc.recv(1024).decode()
-            # Client disconnected
-            if not response:
-                connected = False
-                break
+            # # Client disconnected
+            # if not response:
+            #     connected = False
+            #     break
 
+            client_request = json.loads(response)
             # Ensure exclusive access with the semaphore
             semaphore.acquire()
             try:
-                client_request = json.loads(response)
 
                 # Update game state conditions here and call appropriate functions
                 if client_request == "client_game_data":
@@ -49,19 +49,17 @@ def handle_client(client_soc:socket.socket, client:str, semaphore:threading.Sema
                     server_update_response(client_sockets_dict, client, client_soc)
                 elif client_request == "game_over":
                     connected = False 
-                    semaphore.release()
-                    break
-
-                # Update other clients values
-                for key, value in client_sockets_dict.items():
-                    if value != client_soc:
-                        client_sockets_dict[key].send(json.dumps(game_state).encode())
+            
+                # # Update other clients values
+                # for key, value in client_sockets_dict.items():
+                #     if value != client_soc:
+                #         client_sockets_dict[key].send(json.dumps(game_state).encode())
 
             except Exception as e:
                 print(f"Error processing client request: {str(e)}")
-            finally:
-                # Release the semaphore to allow access to other threads
-                semaphore.release()
+
+            # Release the semaphore to allow access to other threads
+            semaphore.release()
 
     except Exception as e:
         print(f"Client connection error: {str(e)}")
@@ -163,18 +161,18 @@ game_state = {key: {} for key in client_sockets_dict.keys()}
 for key in client_sockets_dict.keys():
     if first_client is True:
         game_state[key]["paddle"] = "right"
-        game_state[key]["paddle_loc"] = ""
-        game_state[key]["paddle_locOP"] = ""
-        game_state[key]["ball_loc"]= ""
+        game_state[key]["paddle_loc"] = []
+        game_state[key]["paddle_locOP"] = []
+        game_state[key]["ball_loc"]= []
         game_state[key]["rScore"] = 0
         game_state[key]["lScore"] = 0
         game_state[key]["sync"] = 0
         first_client = False
     else:
         game_state[key]["paddle"] = "left"
-        game_state[key]["paddle_loc"] = ""
-        game_state[key]["paddle_locOP"] = ""
-        game_state[key]["ball_loc"]= ""
+        game_state[key]["paddle_loc"] = []
+        game_state[key]["paddle_locOP"] = []
+        game_state[key]["ball_loc"]= []
         game_state[key]["rScore"] = 0
         game_state[key]["lScore"] = 0
         game_state[key]["sync"] = 0
@@ -183,11 +181,20 @@ for key in client_sockets_dict.keys():
 for key, value in client_sockets_dict.items():
     join_server_response(value, key)
 
-while game_over is False:
-    # Handle the clients with threads
-    for key, value in client_sockets_dict.items():
-        handle_client = threading.Thread(target=handle_client, args=(value, key, semaphore ))
-        handle_client.start()
+# Handle the clients with threads
+i = 0
+for key, value in client_sockets_dict.items():
+    if i == 0:
+        client_one = threading.Thread(target=handle_client, args=(value, key, semaphore ))
+    # else:
+    #     client_two = threading.Thread(target=handle_client, args=(value, key, semaphore ))
+    # i = 1
+
+client_one.start()
+# client_two.start()
+
+client_one.join()
+# client_two.join()
 
 for value in client_sockets_dict.values():
     value.close()

@@ -85,9 +85,9 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Your code here to send an update to the server on your paddle's information,
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
-        client_game_data = {  "playerPaddle": playerPaddleObj,
-                                "opPaddle" : opponentPaddleObj,
-                                "ball": ball,
+        client_game_data = {  "playerPaddle": [playerPaddleObj.rect[0], playerPaddleObj.rect[1]],
+                                "opPaddle" : [opponentPaddleObj.rect[0], opponentPaddleObj.rect[1]],
+                                "ball": [ball.rect[0], ball.rect[1]],
                                 "lScore": lScore,
                                 "rScore": rScore,
                                  "sync": sync }
@@ -172,9 +172,11 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
         for key, value in response_data.items():
             if key == "paddle_locOP":
-                opponentPaddleObj = value
+                opponentPaddleObj.rect[0] = value[0]
+                opponentPaddleObj.rect[1] = value[1]
             elif key == "ball":
-                ball = value
+                ball.rect[0] = value[0]
+                ball.rect[1] = value[1]
             elif key == "lScore":
                 lScore = value
             elif key == "rScore":
