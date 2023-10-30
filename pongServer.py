@@ -27,10 +27,14 @@ import threading
 # Pre:          This function carries out the instructions for the client
 # Post:         Sends the client the information it was asking for
 
-def handle_client(client_soc:socket.socket, client:str, semaphore:threading.Semaphore) -> None: 
+def handle_client(client_soc:socket.socket, client:str) -> None: 
+    global semaphore
+    global client_sockets_dict
+    global server_socket
     connected = True
     try:
         while connected: 
+            server_socket.listen(5)
             response = client_soc.recv(1024).decode()
             # # Client disconnected
             # if not response:
@@ -38,9 +42,9 @@ def handle_client(client_soc:socket.socket, client:str, semaphore:threading.Sema
             #     break
 
             client_request = json.loads(response)
-            # Ensure exclusive access with the semaphore
-            semaphore.acquire()
             try:
+                # Ensure exclusive access with the semaphore
+                semaphore.acquire()
 
                 # Update game state conditions here and call appropriate functions
                 if client_request == "client_game_data":
@@ -71,9 +75,10 @@ def handle_client(client_soc:socket.socket, client:str, semaphore:threading.Sema
 # Post:         Server sends corresponding information back to client
 
 def join_server_response(client_soc:socket.socket, client:str) -> None:
-    join_server_response_data = {   "screen_width": 1600,
+    global game_state
+    join_server_response_data = {"screen_width": 1600,
                                     "screen_height": 900,
-                                    "player_paddle": game_state[client]["paddle"] }
+                                    "player_paddle": game_state[client]["paddle"]}
     client_soc.send(json.dumps(join_server_response_data).encode())
 
 # ======================================================================================================================= #
@@ -84,6 +89,7 @@ def join_server_response(client_soc:socket.socket, client:str) -> None:
 # Post:         Server updates corresponding values for the client
 
 def update_client_data(client_id:str, data:dict) -> None:
+    global game_state
     for key, value in data.items():
         if key == "playerPaddle":
             game_state[client_id]["paddle_loc"] = value
@@ -106,23 +112,25 @@ def update_client_data(client_id:str, data:dict) -> None:
 # Post:         Server sends update and fixes sync issues
 
 def server_update_response(clients:dict, clientid:str, clientSoc:socket.socket) -> None:
+    global game_state
     for key in clients:
         if key != clientid:
             opponent_subdict = clients[key]
+            opp_key = key
             for subkey, value in opponent_subdict.items():
                 if subkey == "sync":
                     if value > game_state[clientid][subkey]:
-                        game_state[clientid]["paddle_locOP"] = opponent_subdict["paddle_loc"]
-                        game_state[clientid]["ball"] = opponent_subdict["ball"]
-                        game_state[clientid]["lScore"] = opponent_subdict["lScore"]
-                        game_state[clientid]["rScore"] = opponent_subdict["rScore"]
-                        game_state[clientid]["sync"] = opponent_subdict["sync"]
+                        game_state[clientid]["paddle_locOP"] = game_state[opp_key]["paddle_loc"]
+                        game_state[clientid]["ball"] = game_state[opp_key]["ball"]
+                        game_state[clientid]["lScore"] = game_state[opp_key]["lScore"]
+                        game_state[clientid]["rScore"] = game_state[opp_key]["rScore"]
+                        game_state[clientid]["sync"] = game_state[opp_key]["sync"]
                     elif value < game_state[clientid][subkey]:
-                        opponent_subdict["paddle_locOP"] = game_state[clientid]["paddle_loc"]
-                        opponent_subdict["ball"] = game_state[clientid]["ball"]
-                        opponent_subdict["lScore"] = game_state[clientid]["lScore"]
-                        opponent_subdict["rScore"] = game_state[clientid]["rScore"]
-                        opponent_subdict["sync"] = game_state[clientid]["sync"]
+                        game_state[opp_key]["paddle_locOP"] = game_state[clientid]["paddle_loc"]
+                        game_state[opp_key]["ball"] = game_state[clientid]["ball"]
+                        game_state[opp_key]["lScore"] = game_state[clientid]["lScore"]
+                        game_state[opp_key]["rScore"] = game_state[clientid]["rScore"]
+                        game_state[opp_key]["sync"] = game_state[clientid]["sync"]
             
     clientSoc.send(json.dumps(game_state[clientid]).encode())
 
@@ -137,14 +145,14 @@ server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # For local 
 server_socket.bind((server_host, server_ip))
 
 # Listen for clients
-server_socket.listen(5)
+server_socket.listen()
 
 semaphore = threading.Semaphore(1)
-client_sockets_dict = dict()
-game_state = dict()
 connected_players = 0
 game_over = False
 first_client = True
+client_sockets_dict = dict()
+game_state = dict()
 
 while connected_players < 1:
     # Accept connection from the client
@@ -185,20 +193,22 @@ for key, value in client_sockets_dict.items():
 i = 0
 for key, value in client_sockets_dict.items():
     if i == 0:
-        client_one = threading.Thread(target=handle_client, args=(value, key, semaphore ))
+        client_one = threading.Thread(target=handle_client, args=(value, key,))
     # else:
     #     client_two = threading.Thread(target=handle_client, args=(value, key, semaphore ))
     # i = 1
 
-client_one.start()
-# client_two.start()
+threads = [client_one]
 
-client_one.join()
-# client_two.join()
+for thread in threads:
+    thread.start()
 
-for value in client_sockets_dict.values():
-    value.close()
+for thread in threads:
+    thread.join()
 
-server_socket.close()
+# for value in client_sockets_dict.values():
+#     value.close()
+
+# server_socket.close()
 
 
