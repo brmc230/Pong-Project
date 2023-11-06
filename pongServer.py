@@ -196,11 +196,11 @@ i = 0
 for key, value in client_sockets_dict.items():
     if i == 0:
         client_one = threading.Thread(target=handle_client, args=(value, key,))
-    # else:
-    #     client_two = threading.Thread(target=handle_client, args=(value, key, semaphore ))
-    # i = 1
+    else:
+        client_two = threading.Thread(target=handle_client, args=(value, key, semaphore ))
+    i = 1
 
-threads = [client_one]
+threads = [client_one, client_two]
 
 for thread in threads:
     thread.start()
