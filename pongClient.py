@@ -85,12 +85,13 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Your code here to send an update to the server on your paddle's information,
         # where the ball is and the current score.
         # Feel free to change when the score is updated to suit your needs/requirements
-        client_game_data = {  "playerPaddle": [playerPaddleObj.rect[0], playerPaddleObj.rect[1]],
+        client_game_data = {    "codeword": "client_game_data",
+                                "playerPaddle": [playerPaddleObj.rect[0], playerPaddleObj.rect[1]],
                                 "opPaddle" : [opponentPaddleObj.rect[0], opponentPaddleObj.rect[1]],
                                 "ball": [ball.rect[0], ball.rect[1]],
                                 "lScore": lScore,
                                 "rScore": rScore,
-                                 "sync": sync }
+                                 "sync": sync } 
         client.send(json.dumps(client_game_data).encode())        
         
         # =========================================================================================
@@ -111,7 +112,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             textRect = textSurface.get_rect()
             textRect.center = ((screenWidth/2), screenHeight/2)
             winMessage = screen.blit(textSurface, textRect)
-            client.send(("game_over").encode())
+            client.send(json.dumps({"game_over": "key"}).encode())
         else:
 
             # ==== Ball Logic =====================================================================
@@ -166,7 +167,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         #  opponent's game 
         # Whoever is behind needs to be updated to reflect correct balls position
         # Same logic with paddles
-        client.send(("server_update").encode())
+        client.send(json.dumps({"server_update": "key"}).encode())
         response = client.recv(1024).decode()
         response_data = json.loads(response)
 
@@ -202,8 +203,8 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((ip, int(port)))
-    # Get the required information from your server (screen width, height & player paddle, "left or "right)
-    client.send(("join_server").encode())
+    # # Get the required information from your server (screen width, height & player paddle, "left or "right)
+    # client.send(('join_server').encode())
 
     # Display that the game is waiting for the second player to join
     errorLabel.config(text="Waiting for another player to join . . .")

@@ -42,16 +42,18 @@ def handle_client(client_soc:socket.socket, client:str) -> None:
             #     break
 
             client_request = json.loads(response)
+
             try:
                 # Ensure exclusive access with the semaphore
                 semaphore.acquire()
 
                 # Update game state conditions here and call appropriate functions
-                if client_request == "client_game_data":
+                if "codeword" in client_request:
+                    client_request = json.loads(response)
                     update_client_data(client, client_request)
-                elif client_request == "server_update":
+                elif "server_update" in client_request:
                     server_update_response(client_sockets_dict, client, client_soc)
-                elif client_request == "game_over":
+                elif "game_over" in client_request:
                     connected = False 
             
                 # # Update other clients values
@@ -76,8 +78,8 @@ def handle_client(client_soc:socket.socket, client:str) -> None:
 
 def join_server_response(client_soc:socket.socket, client:str) -> None:
     global game_state
-    join_server_response_data = {"screen_width": 1600,
-                                    "screen_height": 900,
+    join_server_response_data = {"screen_width": 800,
+                                    "screen_height": 600,
                                     "player_paddle": game_state[client]["paddle"]}
     client_soc.send(json.dumps(join_server_response_data).encode())
 
@@ -145,7 +147,7 @@ server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # For local 
 server_socket.bind((server_host, server_ip))
 
 # Listen for clients
-server_socket.listen()
+server_socket.listen(5)
 
 semaphore = threading.Semaphore(1)
 connected_players = 0
