@@ -59,6 +59,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
     lScore = 0
     rScore = 0
+    game_over = False
 
     sync = 0
 
@@ -112,6 +113,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             textRect = textSurface.get_rect()
             textRect.center = ((screenWidth/2), screenHeight/2)
             winMessage = screen.blit(textSurface, textRect)
+            game_over = True
             client.send(json.dumps({"game_over": "key"}).encode())
         else:
 
@@ -184,6 +186,9 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
                 rScore = value
             elif key == "sync":
                 sync = value
+
+        if game_over is True:
+            client.close()
 
         # =========================================================================================
 

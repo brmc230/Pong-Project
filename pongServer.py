@@ -208,9 +208,9 @@ for thread in threads:
 for thread in threads:
     thread.join()
 
-# for value in client_sockets_dict.values():
-#     value.close()
+for value in client_sockets_dict.values():
+    value.close()
 
-# server_socket.close()
+server_socket.close()
 
 
