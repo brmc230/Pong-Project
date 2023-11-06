@@ -156,7 +156,7 @@ first_client = True
 client_sockets_dict = dict()
 game_state = dict()
 
-while connected_players < 1:
+while connected_players < 2:
     # Accept connection from the client
     client_socket, client_ip = server_socket.accept() 
     # Give the client a unique ID to reference and add to the clients dictionary
@@ -193,14 +193,16 @@ for key, value in client_sockets_dict.items():
 
 # Handle the clients with threads
 i = 0
+threads = []
 for key, value in client_sockets_dict.items():
     if i == 0:
         client_one = threading.Thread(target=handle_client, args=(value, key,))
+        threads.append(client_one)
     else:
-        client_two = threading.Thread(target=handle_client, args=(value, key, semaphore ))
+        client_two = threading.Thread(target=handle_client, args=(value, key,))
+        threads.append(client_two)
     i = 1
 
-threads = [client_one, client_two]
 
 for thread in threads:
     thread.start()
