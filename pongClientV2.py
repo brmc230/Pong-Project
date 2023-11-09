@@ -169,6 +169,14 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Whoever is behind needs to be updated to reflect correct balls position
         # Same logic with paddles
 
+        response = client.recv(1024).decode()
+        client_game_data.update(response)
+
+        playerPaddleObj.rect[0], playerPaddleObj.rect[1] = client_game_data["playerPaddle"][0], client_game_data["playerPaddle"][1]
+        opponentPaddleObj.rect[0], opponentPaddleObj.rect[1] = client_game_data["opPaddle"][0], client_game_data["opPaddle"][1]
+        ball.rect[0], ball.rect[1] = client_game_data["ball"][0],client_game_data["ball"][1]
+        lScore, rScore = client_game_data["lScore"], client_game_data["rScore"]
+
         # =========================================================================================
 
 # This is where you will connect to the server to get the info required to call the game loop.  Mainly

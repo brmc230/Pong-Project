@@ -20,8 +20,8 @@ import threading
 # Post:         Sends the client the information it was asking for
 
 def handle_client(client_soc:socket.socket) -> None:
-    global semaphore
     global server_socket
+    global game_state
 
     connected = True
 
@@ -29,16 +29,15 @@ def handle_client(client_soc:socket.socket) -> None:
         server_socket.listen(5)
         response = client_soc.recv(1024).decode()
         client_request = json.loads(response)
+        game_state[client_socket].update(client_request)
+
         # Handle when somebody wins/loses
         if client_request["gameOver"] is True:
             connected = False
 
-        # Ensure exlusive access with the semaphore
-        semaphore.acquire()
+        # Update the game state conditions
+        server_update_response(client_soc)
 
-        # Update the game state conditions then release the semaphore
-        server_update_response(client_soc, client_request)
-        semaphore.release()
 
     client_soc.close()
 
@@ -50,11 +49,13 @@ def handle_client(client_soc:socket.socket) -> None:
 # Pre:           Client request to sync game
 # Post:          Server sends update and fixes sync issues
 
-def server_update_response(client_soc:socket.socket, client_request:dict) -> None:
+def server_update_response(client_soc:socket.socket) -> None:
     global clients_sockets
     global game_state
+    global semaphore
 
-    game_state[client_soc].update(client_request)
+    # Ensure exclusive access to the game_state data
+    semaphore.acquire()
     
     # If your number is larger then you are ahead of them in time, if theirs is larger, 
     # they are ahead of you, and you need to catch up (use their info)
@@ -72,6 +73,10 @@ def server_update_response(client_soc:socket.socket, client_request:dict) -> Non
                                                 "lScore": game_state[client]["lScore"],
                                                 "rScore": game_state[client]["rScore"]})
                 client_soc.send(json.dumps(game_state[client_soc]).encode())
+    # Release the semaphore
+    semaphore.release()
+
+# ======================================================================================================================= #
 
 # Initialize the server specs, don't know if this is 100% correct yet
 server_host = "localhost"
