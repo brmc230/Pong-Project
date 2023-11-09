@@ -40,6 +40,8 @@ def handle_client(client_soc:socket.socket) -> None:
         server_update_response(client_soc, client_request)
         semaphore.release()
 
+    client_soc.close()
+
 # ======================================================================================================================= #
 
 # Authors:       Brooke McWilliams
@@ -49,7 +51,6 @@ def handle_client(client_soc:socket.socket) -> None:
 # Post:          Server sends update and fixes sync issues
 
 def server_update_response(client_soc:socket.socket, client_request:dict) -> None:
-
     global clients_sockets
     global game_state
 
