@@ -40,34 +40,26 @@ def server_update(client_soc:socket.socket) -> None:
 # Pre:           Client request to sync game
 # Post:          Server sends update and fixes sync issues
 
-def server_update_response(client_soc:socket.socket) -> None:
+def server_update_response() -> None:
     # Ensure exclusive access to the game_state data
     semaphore2.acquire()
 
-    for client in clients_sockets:
-        if client != client_soc:
-            if game_state[client_soc]["sync"] > game_state[client]["sync"]:
-                game_state[client].update({ "opPaddle": game_state[client_soc]["playerPaddle"],
-                                            "ball": game_state[client_soc]["ball"],
-                                            "lScore": game_state[client_soc]["lScore"],
-                                            "rScore": game_state[client_soc]["rScore"],
-                                            "sync": game_state[client_soc]["sync"]})
+    if game_state[clients_sockets[0]]["sync"] > game_state[clients_sockets[1]]["sync"]:
+        game_state[clients_sockets[1]].update({ "opPaddle": game_state[clients_sockets[0]]["playerPaddle"],
+                                    "ball": game_state[clients_sockets[0]]["ball"],
+                                    "lScore": game_state[clients_sockets[0]]["lScore"],
+                                    "rScore": game_state[clients_sockets[0]]["rScore"],
+                                    "sync": game_state[clients_sockets[0]]["sync"]})
 
-            elif game_state[client_soc]["sync"] < game_state[client]["sync"]:
-                game_state[client_soc].update({ "opPaddle": game_state[client]["playerPaddle"],
-                                                "ball": game_state[client]["ball"], 
-                                                "lScore": game_state[client]["lScore"],
-                                                "rScore": game_state[client]["rScore"],
-                                                "sync": game_state[client]["sync"]})
+    elif game_state[clients_sockets[0]]["sync"] < game_state[clients_sockets[1]]["sync"]:
+        game_state[clients_sockets[0]].update({ "opPaddle": game_state[clients_sockets[1]]["playerPaddle"],
+                                        "ball": game_state[clients_sockets[1]]["ball"], 
+                                        "lScore": game_state[clients_sockets[1]]["lScore"],
+                                        "rScore": game_state[clients_sockets[1]]["rScore"],
+                                        "sync": game_state[clients_sockets[1]]["sync"]})
                 
     # Release the semaphore
     semaphore2.release()
-                
-    # Send the updated game states to each client
-    client0 = json.dumps(game_state[clients_sockets[0]])
-    client1 = json.dumps(game_state[clients_sockets[1]])
-
-    clients_sockets[0].send(client0.encode()), clients_sockets[1].send(client1.encode())
 
 # ======================================================================================================================= #
 
@@ -116,9 +108,11 @@ while connected is True:
         client = threading.Thread(target=server_update, args=(socke,))
         threads.append(client)
 
-    threads[0].start(), threads[1].start()
+    threads[0].start()
+    threads[1].start()
 
-    threads[0].join(), threads[1].join()
+    threads[0].join()
+    threads[1].join()
 
     for client in clients_sockets:
         if game_state[client]["gameOver"] is True:
@@ -126,12 +120,33 @@ while connected is True:
 
     threads = []
     for socke in clients_sockets:
-        client = threading.Thread(target=server_update_response, args=(socke,))
+        client = threading.Thread(target=server_update_response)
         threads.append(client)
     
-    threads[0].start(), threads[1].start()
+    threads[0].start()
+    threads[1].start()
 
-    threads[0].join(), threads[1].join()
+    threads[0].join()
+    threads[1].join()
+
+    #     threads = []
+    # for clients in clients_sockets:
+    #     if game_state[clients]["sync"] % 6 == 0:
+    #         for socke in clients_sockets:
+    #             client = threading.Thread(target=server_update_response, args=(socke,))
+    #             threads.append(client)
+    
+    # if len(threads) != 0:
+    #     threads[0].start(), threads[1].start()
+    # if len(threads) != 0:
+    #     threads[0].join(), threads[1].join()
+
+    # Send the updated game states to each client
+    client0 = json.dumps(game_state[clients_sockets[0]])
+    client1 = json.dumps(game_state[clients_sockets[1]])
+
+    clients_sockets[0].send(client0.encode()) 
+    clients_sockets[1].send(client1.encode())
 
 # Close the client sockets 
 for socke in clients_sockets:
