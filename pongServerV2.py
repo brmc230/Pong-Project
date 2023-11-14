@@ -20,16 +20,18 @@ import threading
 # Post:         Sends the client the information it was asking for
 
 def handle_client(client_soc:socket.socket) -> None:
-    global server_socket
-    global game_state
-
     connected = True
 
     while connected:
         server_socket.listen(5)
         response = client_soc.recv(1024).decode()
         client_request = json.loads(response)
-        game_state[client_socket].update(client_request)
+
+        # Ensure exclusive access to the game_state data
+        semaphore.acquire()
+        game_state[client_soc].update(client_request)
+        # Release the semaphore
+        semaphore.release()
 
         # Handle when somebody wins/loses
         if client_request["gameOver"] is True:
@@ -37,9 +39,6 @@ def handle_client(client_soc:socket.socket) -> None:
 
         # Update the game state conditions
         server_update_response(client_soc)
-
-
-    client_soc.close()
 
 # ======================================================================================================================= #
 
@@ -50,31 +49,22 @@ def handle_client(client_soc:socket.socket) -> None:
 # Post:          Server sends update and fixes sync issues
 
 def server_update_response(client_soc:socket.socket) -> None:
-    global clients_sockets
-    global game_state
-    global semaphore
-
-    # Ensure exclusive access to the game_state data
-    semaphore.acquire()
-    
-    # If your number is larger then you are ahead of them in time, if theirs is larger, 
-    # they are ahead of you, and you need to catch up (use their info)
     for client in clients_sockets:
         if client != client_soc:
             if game_state[client_soc]["sync"] > game_state[client]["sync"]:
                 game_state[client].update({ "opPaddle": game_state[client_soc]["playerPaddle"],
                                             "ball": game_state[client_soc]["ball"],
                                             "lScore": game_state[client_soc]["lScore"],
-                                            "rScore": game_state[client_soc]["rScore"]})
+                                            "rScore": game_state[client_soc]["rScore"],
+                                            "sync": game_state[client_soc]["sync"]})
                 client.send(json.dumps(game_state[client]).encode())
             elif game_state[client_soc]["sync"] < game_state[client]["sync"]:
                 game_state[client_soc].update({ "opPaddle": game_state[client]["playerPaddle"],
                                                 "ball": game_state[client]["ball"], 
                                                 "lScore": game_state[client]["lScore"],
-                                                "rScore": game_state[client]["rScore"]})
+                                                "rScore": game_state[client]["rScore"],
+                                                "sync": game_state[client]["sync"]})
                 client_soc.send(json.dumps(game_state[client_soc]).encode())
-    # Release the semaphore
-    semaphore.release()
 
 # ======================================================================================================================= #
 
@@ -113,16 +103,19 @@ for i in range(len(clients_sockets)):
 # Create the game state dictionary for each client
 game_state = {value: {} for value in clients_sockets}
 
-
 # Handle the clients in threads 
 threads = []
-for socket in clients_sockets:
-    client = threading.Thread(target=handle_client, args=(socket,))
+for socke in clients_sockets:
+    client = threading.Thread(target=handle_client, args=(socke,))
     threads.append(client)
-    client.start()
+
+threads[0].start(), threads[1].start()
 
 for thread in threads:
     thread.join()
+
+for socke in clients_sockets:
+    socke.close()
 
 # Close the server socket when done 
 server_socket.close()
