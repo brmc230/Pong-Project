@@ -98,7 +98,6 @@ while len(clients_sockets) < 2:
     
     client_socket, client_ip = server_socket.accept()
     clients_sockets.append(client_socket)
-    print(client_socket)
 
 # Send the game specs to the client to fire the game up
 i = 0
