@@ -1,6 +1,8 @@
 # ======================================================================================================================= #
 # Contributing Authors:	    Brooke McWilliams
+                            Morgan Miller
 # Email Addresses:          brmc230@uky.edu
+                            mdmi240@uky.edu
 # Date:                     10/23/2023
 # Purpose:                  This file implements the client side of the pong game in connection to
 #                           the server
@@ -153,7 +155,9 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
                                 "lScore": lScore,
                                 "rScore": rScore,
                                 "gameOver": game_over,
-                                "sync": sync } 
+                                #the server response now includes the correct sync value
+                                # "sync": sync 
+                           } 
         client.send(json.dumps(client_game_data).encode())  
 
         # =========================================================================================
@@ -163,17 +167,18 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # Same logic with paddles
         response = client.recv(1024).decode()
         server_response = json.loads(response)
-        client_game_data.update(server_response)
+        
+        # Update game state with server response
+        playerPaddleObj.rect.x, playerPaddleObj.rect.y = server_response["playerPaddle"][0], server_response["playerPaddle"][1]
+        opponentPaddleObj.rect.x, opponentPaddleObj.rect.y = server_response["opPaddle"][0], server_response["opPaddle"][1]
 
-        playerPaddleObj.rect.x, playerPaddleObj.rect.y = client_game_data["playerPaddle"][0], client_game_data["playerPaddle"][1]
-        opponentPaddleObj.rect.x, opponentPaddleObj.rect.y = client_game_data["opPaddle"][0], client_game_data["opPaddle"][1]
 
+         ball.rect.x, ball.rect.y = server_response["ball"][0], server_response["ball"][1]
 
-        ball.rect.x, ball.rect.y = client_game_data["ball"][0], client_game_data["ball"][1]
+        lScore, rScore = server_response["lScore"], server_response["rScore"]
 
-        lScore, rScore = client_game_data["lScore"], client_game_data["rScore"]
-
-        sync = client_game_data["sync"]
+        # sync is updated based on server response
+        sync = server_response["sync"]
 
         # =========================================================================================
 
