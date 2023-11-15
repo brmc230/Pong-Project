@@ -63,7 +63,7 @@ def server_update_response() -> None:
 
 # ======================================================================================================================= #
 
-# Initialize the server specs, don't know if this is 100% correct yet
+# Initialize the server specs
 server_host = "127.0.0.1" # 10.47.171.218
 server_ip = 5555 # 9010
 
