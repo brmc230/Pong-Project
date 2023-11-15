@@ -43,20 +43,13 @@ def server_update(client_soc:socket.socket) -> None:
 def server_update_response() -> None:
     # Ensure exclusive access to the game_state data
     semaphore2.acquire()
+    
+    # Calculate the maximum sync value
+    max_sync = max(game_state[clients_sockets[0]]["sync"], game_state[clients_sockets[1]]["sync"])
 
-    if game_state[clients_sockets[0]]["sync"] > game_state[clients_sockets[1]]["sync"]:
-        game_state[clients_sockets[1]].update({ "opPaddle": game_state[clients_sockets[0]]["playerPaddle"],
-                                    "ball": game_state[clients_sockets[0]]["ball"],
-                                    "lScore": game_state[clients_sockets[0]]["lScore"],
-                                    "rScore": game_state[clients_sockets[0]]["rScore"],
-                                    "sync": game_state[clients_sockets[0]]["sync"]})
-
-    elif game_state[clients_sockets[0]]["sync"] < game_state[clients_sockets[1]]["sync"]:
-        game_state[clients_sockets[0]].update({ "opPaddle": game_state[clients_sockets[1]]["playerPaddle"],
-                                        "ball": game_state[clients_sockets[1]]["ball"], 
-                                        "lScore": game_state[clients_sockets[1]]["lScore"],
-                                        "rScore": game_state[clients_sockets[1]]["rScore"],
-                                        "sync": game_state[clients_sockets[1]]["sync"]})
+    # Update both clients with the maximum sync value
+    game_state[clients_sockets[0]]["sync"] = max_sync
+    game_state[clients_sockets[1]]["sync"] = max_sync
                 
     # Release the semaphore
     semaphore2.release()
