@@ -64,8 +64,8 @@ def server_update_response() -> None:
 # ======================================================================================================================= #
 
 # Initialize the server specs
-server_host = "127.0.0.1" # 10.47.171.218
-server_ip = 5555 # 9010
+server_host = "10.47.137.190" # 10.47.171.218
+server_ip = 12321
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # For local host use
