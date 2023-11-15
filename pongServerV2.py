@@ -11,6 +11,7 @@
 import json
 import socket
 import threading
+import time
 
 # ======================================================================================================================= #
 # Authors:      Brooke McWilliams
@@ -64,11 +65,11 @@ def server_update_response() -> None:
 # ======================================================================================================================= #
 
 # Initialize the server specs, don't know if this is 100% correct yet
-server_host = "localhost"
-server_ip = 12321
+server_host = "127.0.0.1" # 10.47.171.218
+server_ip = 5555 # 9010
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # For local host use
+# server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # For local host use
 server_socket.bind((server_host, server_ip))
 
 # Listen for clients
@@ -91,11 +92,10 @@ while len(clients_sockets) < 2:
     clients_sockets.append(client_socket)
 
 # Send the game specs to the client to fire the game up
-i = 0
-for i in range(len(clients_sockets)):
-    clients_sockets[i].send(json.dumps(game_specs[i]).encode())
-    i += 1
-    
+clients_sockets[0].send(json.dumps(game_specs[0]).encode())
+clients_sockets[1].send(json.dumps(game_specs[1]).encode())
+
+
 # Create the game state dictionary for each client
 game_state = {value: {} for value in clients_sockets}
 
@@ -103,43 +103,22 @@ connected = True
 
 # Handle the clients in threads to loop  through the game state until the game is over
 while connected is True:
+
     threads = []
     for socke in clients_sockets:
         client = threading.Thread(target=server_update, args=(socke,))
         threads.append(client)
 
-    threads[0].start()
-    threads[1].start()
-
-    threads[0].join()
-    threads[1].join()
-
-    for client in clients_sockets:
-        if game_state[client]["gameOver"] is True:
-            connected = False
+    threads[0].start(), threads[1].start()
+    threads[0].join(), threads[1].join()
 
     threads = []
     for socke in clients_sockets:
         client = threading.Thread(target=server_update_response)
         threads.append(client)
     
-    threads[0].start()
-    threads[1].start()
-
-    threads[0].join()
-    threads[1].join()
-
-    #     threads = []
-    # for clients in clients_sockets:
-    #     if game_state[clients]["sync"] % 6 == 0:
-    #         for socke in clients_sockets:
-    #             client = threading.Thread(target=server_update_response, args=(socke,))
-    #             threads.append(client)
-    
-    # if len(threads) != 0:
-    #     threads[0].start(), threads[1].start()
-    # if len(threads) != 0:
-    #     threads[0].join(), threads[1].join()
+    threads[0].start(), threads[1].start()
+    threads[0].join(), threads[1].join()
 
     # Send the updated game states to each client
     client0 = json.dumps(game_state[clients_sockets[0]])
@@ -148,10 +127,11 @@ while connected is True:
     clients_sockets[0].send(client0.encode()) 
     clients_sockets[1].send(client1.encode())
 
-# Close the client sockets 
-for socke in clients_sockets:
-    socke.close()
 
-# Close the server socket when done 
-server_socket.close()
+# # Close the client sockets 
+# for socke in clients_sockets:
+#     socke.close()
+
+# # Close the server socket when done 
+# server_socket.close()
 

@@ -34,7 +34,6 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
     # Display objects
     screen = pygame.display.set_mode((screenWidth, screenHeight))
-    winMessage = pygame.Rect(0,0,0,0)
     topWall = pygame.Rect(-10,0,screenWidth+20, 10)
     bottomWall = pygame.Rect(-10, screenHeight-10, screenWidth+20, 10)
     centerLine = []
@@ -50,12 +49,8 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
     ball = Ball(pygame.Rect(screenWidth/2, screenHeight/2, 5, 5), -5, 0)
 
-    if playerPaddle == "left":
-        opponentPaddleObj = rightPaddle
-        playerPaddleObj = leftPaddle
-    else:
-        opponentPaddleObj = leftPaddle
-        playerPaddleObj = rightPaddle
+    playerPaddleObj = leftPaddle if playerPaddle == "left" else rightPaddle
+    opponentPaddleObj = rightPaddle if playerPaddle == "left" else leftPaddle
 
     lScore = 0
     rScore = 0
@@ -63,7 +58,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
     sync = 0
 
-    while game_over is False:
+    while True:
         # Wiping the screen
         screen.fill((0,0,0))
 
@@ -75,27 +70,10 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_DOWN:
                     playerPaddleObj.moving = "down"
-
                 elif event.key == pygame.K_UP:
                     playerPaddleObj.moving = "up"
-
             elif event.type == pygame.KEYUP:
                 playerPaddleObj.moving = ""
-
-        # =========================================================================================
-        # Your code here to send an update to the server on your paddle's information,
-        # where the ball is and the current score.
-        # Feel free to change when the score is updated to suit your needs/requirements
-        client_game_data = {    "playerPaddle": [playerPaddleObj.rect[0], playerPaddleObj.rect[1]],
-                                "opPaddle" : [opponentPaddleObj.rect[0], opponentPaddleObj.rect[1]],
-                                "ball": [ball.rect[0], ball.rect[1]],
-                                "lScore": lScore,
-                                "rScore": rScore,
-                                "gameOver": game_over,
-                                "sync": sync } 
-        client.send(json.dumps(client_game_data).encode())        
-        
-        # =========================================================================================
 
         # Update the player paddle and opponent paddle's location on the screen
         for paddle in [playerPaddleObj, opponentPaddleObj]:
@@ -112,38 +90,36 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             textSurface = winFont.render(winText, False, WHITE, (0,0,0))
             textRect = textSurface.get_rect()
             textRect.center = ((screenWidth/2), screenHeight/2)
-            winMessage = screen.blit(textSurface, textRect)
+            screen.blit(textSurface, textRect)
             game_over = True
-        else:
+        # ==== Ball Logic =====================================================================
+        ball.updatePos()
 
-            # ==== Ball Logic =====================================================================
-            ball.updatePos()
-
-            # If the ball makes it past the edge of the screen, update score, etc.
-            if ball.rect.x > screenWidth:
-                lScore += 1
-                pointSound.play()
-                ball.reset(nowGoing="left")
-            elif ball.rect.x < 0:
-                rScore += 1
-                pointSound.play()
-                ball.reset(nowGoing="right")
-                
-            # If the ball hits a paddle
-            if ball.rect.colliderect(playerPaddleObj.rect):
-                bounceSound.play()
-                ball.hitPaddle(playerPaddleObj.rect.center[1])
-            elif ball.rect.colliderect(opponentPaddleObj.rect):
-                bounceSound.play()
-                ball.hitPaddle(opponentPaddleObj.rect.center[1])
-                
-            # If the ball hits a wall
-            if ball.rect.colliderect(topWall) or ball.rect.colliderect(bottomWall):
-                bounceSound.play()
-                ball.hitWall()
+        # If the ball makes it past the edge of the screen, update score, etc.
+        if ball.rect.x > screenWidth:
+            lScore += 1
+            pointSound.play()
+            ball.reset(nowGoing="left")
+        elif ball.rect.x < 0:
+            rScore += 1
+            pointSound.play()
+            ball.reset(nowGoing="right")
             
-            pygame.draw.rect(screen, WHITE, ball)
-            # ==== End Ball Logic =================================================================
+        # If the ball hits a paddle
+        if ball.rect.colliderect(playerPaddleObj.rect):
+            bounceSound.play()
+            ball.hitPaddle(playerPaddleObj.rect.center[1])
+        elif ball.rect.colliderect(opponentPaddleObj.rect):
+            bounceSound.play()
+            ball.hitPaddle(opponentPaddleObj.rect.center[1])
+            
+        # If the ball hits a wall
+        if ball.rect.colliderect(topWall) or ball.rect.colliderect(bottomWall):
+            bounceSound.play()
+            ball.hitWall()
+        
+        pygame.draw.rect(screen, WHITE, ball)
+        # ==== End Ball Logic =================================================================
 
         # Drawing the dotted line in the center
         for i in centerLine:
@@ -155,7 +131,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
         pygame.draw.rect(screen, WHITE, topWall)
         pygame.draw.rect(screen, WHITE, bottomWall)
-        scoreRect = updateScore(lScore, rScore, screen, WHITE, scoreFont)
+        updateScore(lScore, rScore, screen, WHITE, scoreFont)
         pygame.display.update()
         clock.tick(60)
         
@@ -163,25 +139,40 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
         # then you are ahead of them in time, if theirs is larger, they are ahead of you, and you need to
         # catch up (use their info)
         sync += 1
+
+        # Your code here to send an update to the server on your paddle's information,
+        # where the ball is and the current score.
+        # Feel free to change when the score is updated to suit your needs/requirements
+        client_paddle = [playerPaddleObj.rect.x, playerPaddleObj.rect.y]
+        oppo_paddle = [opponentPaddleObj.rect.x, opponentPaddleObj.rect.y]
+        shared_ball = [ball.rect.x, ball.rect.y]
+
+        client_game_data = {    "playerPaddle": client_paddle,
+                                "opPaddle" : oppo_paddle,
+                                "ball": shared_ball,
+                                "lScore": lScore,
+                                "rScore": rScore,
+                                "gameOver": game_over,
+                                "sync": sync } 
+        client.send(json.dumps(client_game_data).encode())  
+
         # =========================================================================================
         # Send your server update here at the end of the game loop to sync your game with your
         #  opponent's game 
         # Whoever is behind needs to be updated to reflect correct balls position
         # Same logic with paddles
-
-        
         response = client.recv(1024).decode()
         server_response = json.loads(response)
         client_game_data.update(server_response)
 
-        playerPaddleObj.rect[0] = client_game_data["playerPaddle"][0]
-        playerPaddleObj.rect[1] = client_game_data["playerPaddle"][1]
-        opponentPaddleObj.rect[0] = client_game_data["opPaddle"][0]
-        opponentPaddleObj.rect[1] = client_game_data["opPaddle"][1]
-        ball.rect[0] = client_game_data["ball"][0]
-        ball.rect[1] = client_game_data["ball"][1]
-        lScore = client_game_data["lScore"]
-        rScore = client_game_data["rScore"]
+        playerPaddleObj.rect.x, playerPaddleObj.rect.y = client_game_data["playerPaddle"][0], client_game_data["playerPaddle"][1]
+        opponentPaddleObj.rect.x, opponentPaddleObj.rect.y = client_game_data["opPaddle"][0], client_game_data["opPaddle"][1]
+
+
+        ball.rect.x, ball.rect.y = client_game_data["ball"][0], client_game_data["ball"][1]
+
+        lScore, rScore = client_game_data["lScore"], client_game_data["rScore"]
+
         sync = client_game_data["sync"]
 
         # =========================================================================================
