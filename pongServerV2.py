@@ -96,7 +96,8 @@ clients_sockets[1].send(json.dumps(game_specs[1]).encode())
 
 
 # Create the game state dictionary for each client
-game_state = {value: {} for value in clients_sockets}
+# ensure that the initial state is properly set and synchronized between the two clients when you start the game on both the server and client sides
+game_state = {sock: {"playerPaddle": (0, 0), "opPaddle": (0, 0), "ball": (0, 0), "lScore": 0, "rScore": 0, "sync": 0} for sock in clients_sockets}
 
 connected = True
 
