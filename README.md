@@ -8,6 +8,10 @@ Group Members & Email Addresses:
 
 Versioning
 ==========
+V1 - Redundant server side that is no longer applicable
+V2 - Running server/client correctly 
+
+pongServerTest - Small test with changed code that is no longer used
 
 Github Link: https://github.com/brmc230/Pong-Project
 
@@ -24,5 +28,6 @@ Run the following line to install the required libraries for this project:
 
 Known Bugs
 ==========
-- The server doesn't work because the logic isn't yet written.
-- The client doesn't speak to the server
+When the game is completed and a user has won/lost, the game continues to play in the background and the score is still updated
+
+Not sure when to close the client and server connections yet
