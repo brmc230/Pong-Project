@@ -13,8 +13,6 @@ import sys
 import socket
 import json
 from assets.code.helperCode import *
-import time
-
 
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
