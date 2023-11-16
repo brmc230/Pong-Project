@@ -9,7 +9,8 @@ Group Members & Email Addresses:
 Versioning
 ==========
 V1 - Redundant server side that is no longer applicable
-V2 - Running server/client correctly 
+V2 - Partially complete server/client code
+V3 - Fully functional client and server code
 
 pongServerTest - Small test with changed code that is no longer used
 
@@ -28,6 +29,5 @@ Run the following line to install the required libraries for this project:
 
 Known Bugs
 ==========
-When the game is completed and a user has won/lost, the game continues to play in the background and the score is still updated
 
 Not sure when to close the client and server connections yet
