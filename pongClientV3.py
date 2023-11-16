@@ -1,6 +1,8 @@
 # ======================================================================================================================= #
 # Contributing Authors:	    Brooke McWilliams
+                            Morgan Miller
 # Email Addresses:          brmc230@uky.edu
+                            mdmi240@uky.edu
 # Date:                     10/23/2023
 # Purpose:                  This file implements the client side of the pong game in connection to
 #                           the server
@@ -165,17 +167,26 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             #  opponent's game 
             # Whoever is behind needs to be updated to reflect correct balls position
             # Same logic with paddles
+            # Receive the server response and decode it
             response = client.recv(1024).decode()
             server_response = json.loads(response)
-
+            
+            # Update the player's paddle position based on the server response
             playerPaddleObj.rect.x, playerPaddleObj.rect.y = server_response["playerPaddle"][0], server_response["playerPaddle"][1]
+
+            # Update the opponent's paddle position based on the server response
             opponentPaddleObj.rect.x, opponentPaddleObj.rect.y = server_response["opPaddle"][0], server_response["opPaddle"][1]
+
+            # Update the opponent's paddle movement state based on the server response
             opponentPaddleObj.moving = server_response["opPaddle"][2]
 
+            # Update the ball position based on the server response
             ball.rect.x, ball.rect.y = server_response["ball"][0], server_response["ball"][1]
 
+            # Update the scores based on the server response
             lScore, rScore = server_response["lScore"], server_response["rScore"]
 
+            # Update the synchronization value based on the server response
             sync = server_response["sync"]
 
             # =========================================================================================
