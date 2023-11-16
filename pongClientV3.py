@@ -15,8 +15,6 @@ import sys
 import socket
 import json
 from assets.code.helperCode import *
-import time
-
 
 # This is the main game loop.  For the most part, you will not need to modify this.  The sections
 # where you should add to the code are marked.  Feel free to change any part of this project
@@ -96,6 +94,8 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
                 textRect = textSurface.get_rect()
                 textRect.center = ((screenWidth/2), screenHeight/2)
                 screen.blit(textSurface, textRect)
+                # Set the gameOver variable to false and continue so that we break out of the loop
+                #   and display if the client wants to play again
                 gameOver = True
                 continue
 
@@ -145,6 +145,9 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             # Your code here to send an update to the server on your paddle's information,
             # where the ball is and the current score.
             # Feel free to change when the score is updated to suit your needs/requirements
+
+            # Assign variables that hold the player paddle, opponent paddle, and ball details so that
+            #   json can correctly serialize the dictionary to send to the server
             client_paddle = [playerPaddleObj.rect.x, playerPaddleObj.rect.y, playerPaddleObj.moving]
             oppo_paddle = [opponentPaddleObj.rect.x, opponentPaddleObj.rect.y, opponentPaddleObj.moving]
             shared_ball = [ball.rect.x, ball.rect.y]
@@ -155,6 +158,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
                                     "lScore": lScore,
                                     "rScore": rScore,
                                     "sync": sync } 
+            
             client.send(json.dumps(client_game_data).encode())  
 
             # This number should be synchronized between you and your opponent.  If your number is larger
@@ -192,7 +196,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
             # =========================================================================================
 
         else: 
-            # Ask if the user wants to play again
+            # Ask if the user wants to play again since a game has finished with a winner
             restartText = "Press 'R' to play again"
             restartSurface = winFont.render(restartText, True, WHITE)
             testRect = restartSurface.get_rect(center=(screenWidth/2, screenHeight/2 + 100))
@@ -206,7 +210,7 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
-                        # Call the playGame function to start a new game
+                        # Call the playGame function to start a new game if the client presses 'R'
                         playGame(screenWidth, screenHeight, playerPaddle, client)
 
 # This is where you will connect to the server to get the info required to call the game loop.  Mainly
@@ -225,15 +229,17 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((ip, int(port)))
-    # # Get the required information from your server (screen width, height & player paddle, "left or "right)
 
+    # Get the required information from your server (screen width, height & player paddle, "left or "right)
     # Display that the game is waiting for the second player to join
     errorLabel.config(text="Waiting for another player to join . . .")
     errorLabel.update()
+
     # Receive the server response and collect the playGame data
     response = client.recv(1024).decode()
     join_server_data = json.loads(response)
 
+    # Set the variables according to the server message to fire the game
     screenWidth = join_server_data["screen_width"]
     screenHeight = join_server_data["screen_height"]
     playerPaddle = join_server_data["player_paddle"]
