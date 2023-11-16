@@ -69,7 +69,7 @@ def server_update_response() -> None:
 # ======================================================================================================================= #
 
 # Initialize the server specs
-server_host = "localhost" # 10.47.137.190
+server_host = "10.47.137.190" # 10.47.137.190
 server_ip = 12321
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -124,10 +124,10 @@ while connected is True:
     clients_sockets[1].send(json.dumps(game_state[clients_sockets[1]]).encode())
 
 
-# # Close the client sockets 
-# for socke in clients_sockets:
-#     socke.close()
+# Close the client sockets 
+for socke in clients_sockets:
+    socke.close()
 
-# # Close the server socket when done 
-# server_socket.close()
+# Close the server socket when done 
+server_socket.close()
 
