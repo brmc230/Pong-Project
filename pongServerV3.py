@@ -1,7 +1,7 @@
 # Contributing Authors:	    Brooke McWilliams
 #                           Morgan Miller
 # Email Addresses:          brmc230@uky.edu
-#                        
+#                           mdmi240@uky.edu
 # Date:                     10/23/2023
 # Purpose:                  Code that implements the server side of the Pong game and interacts with
 #                           the client
