@@ -1,8 +1,8 @@
 # ======================================================================================================================= #
 # Contributing Authors:	    Brooke McWilliams
-                            Morgan Miller
+#                            Morgan Miller
 # Email Addresses:          brmc230@uky.edu
-                            mdmi240@uky.edu
+#                           mdmi240@uky.edu
 # Date:                     10/23/2023
 # Purpose:                  This file implements the client side of the pong game in connection to
 #                           the server
