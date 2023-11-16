@@ -73,7 +73,7 @@ server_host = "10.47.137.190" # 10.47.137.190
 server_ip = 12321
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # For local host use
+# server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # For local host use
 server_socket.bind((server_host, server_ip))
 
 # Listen for clients
