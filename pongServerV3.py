@@ -69,7 +69,7 @@ def server_update_response() -> None:
 # ======================================================================================================================= #
 
 # Initialize the server specs
-server_host = "10.47.137.190" # 10.47.137.190
+server_host = "localhost" # 10.47.137.190
 server_ip = 12321
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -58,122 +58,145 @@ def playGame(screenWidth:int, screenHeight:int, playerPaddle:str, client:socket.
 
     sync = 0
     opponentPaddleObj.moving = ""
+    gameOver = False
 
     while True:
-        # Wiping the screen
-        screen.fill((0,0,0))
+        if gameOver is False:
+            # Wiping the screen
+            screen.fill((0,0,0))
 
-        # Getting keypress events
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_DOWN:
-                    playerPaddleObj.moving = "down"
-                elif event.key == pygame.K_UP:
-                    playerPaddleObj.moving = "up"
-            elif event.type == pygame.KEYUP:
-                playerPaddleObj.moving = ""
+            # Getting keypress events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_DOWN:
+                        playerPaddleObj.moving = "down"
+                    elif event.key == pygame.K_UP:
+                        playerPaddleObj.moving = "up"
+                elif event.type == pygame.KEYUP:
+                    playerPaddleObj.moving = ""
 
-        # Update the player paddle and opponent paddle's location on the screen
-        for paddle in [playerPaddleObj, opponentPaddleObj]:
-            if paddle.moving == "down":
-                if paddle.rect.bottomleft[1] < screenHeight-10:
-                    paddle.rect.y += paddle.speed
-            elif paddle.moving == "up":
-                if paddle.rect.topleft[1] > 10:
-                    paddle.rect.y -= paddle.speed
+            # Update the player paddle and opponent paddle's location on the screen
+            for paddle in [playerPaddleObj, opponentPaddleObj]:
+                if paddle.moving == "down":
+                    if paddle.rect.bottomleft[1] < screenHeight-10:
+                        paddle.rect.y += paddle.speed
+                elif paddle.moving == "up":
+                    if paddle.rect.topleft[1] > 10:
+                        paddle.rect.y -= paddle.speed
 
-        # If the game is over, display the win message
-        if lScore > 4 or rScore > 4:
-            winText = "Player 1 Wins! " if lScore > 4 else "Player 2 Wins! "
-            textSurface = winFont.render(winText, False, WHITE, (0,0,0))
-            textRect = textSurface.get_rect()
-            textRect.center = ((screenWidth/2), screenHeight/2)
-            screen.blit(textSurface, textRect)
-        # ==== Ball Logic =====================================================================
-        ball.updatePos()
+            # If the game is over, display the win message
+            if lScore > 4 or rScore > 4:
+                winText = "Player 1 Wins! " if lScore > 4 else "Player 2 Wins! "
+                textSurface = winFont.render(winText, False, WHITE, (0,0,0))
+                textRect = textSurface.get_rect()
+                textRect.center = ((screenWidth/2), screenHeight/2)
+                screen.blit(textSurface, textRect)
+                gameOver = True
+                continue
 
-        # If the ball makes it past the edge of the screen, update score, etc.
-        if ball.rect.x > screenWidth:
-            lScore += 1
-            pointSound.play()
-            ball.reset(nowGoing="left")
-        elif ball.rect.x < 0:
-            rScore += 1
-            pointSound.play()
-            ball.reset(nowGoing="right")
+            # ==== Ball Logic =====================================================================
+            ball.updatePos()
+
+            # If the ball makes it past the edge of the screen, update score, etc.
+            if ball.rect.x > screenWidth:
+                lScore += 1
+                pointSound.play()
+                ball.reset(nowGoing="left")
+            elif ball.rect.x < 0:
+                rScore += 1
+                pointSound.play()
+                ball.reset(nowGoing="right")
+                
+            # If the ball hits a paddle
+            if ball.rect.colliderect(playerPaddleObj.rect):
+                bounceSound.play()
+                ball.hitPaddle(playerPaddleObj.rect.center[1])
+            elif ball.rect.colliderect(opponentPaddleObj.rect):
+                bounceSound.play()
+                ball.hitPaddle(opponentPaddleObj.rect.center[1])
+                
+            # If the ball hits a wall
+            if ball.rect.colliderect(topWall) or ball.rect.colliderect(bottomWall):
+                bounceSound.play()
+                ball.hitWall()
             
-        # If the ball hits a paddle
-        if ball.rect.colliderect(playerPaddleObj.rect):
-            bounceSound.play()
-            ball.hitPaddle(playerPaddleObj.rect.center[1])
-        elif ball.rect.colliderect(opponentPaddleObj.rect):
-            bounceSound.play()
-            ball.hitPaddle(opponentPaddleObj.rect.center[1])
+            pygame.draw.rect(screen, WHITE, ball)
+            # ==== End Ball Logic =================================================================
+
+            # Drawing the dotted line in the center
+            for i in centerLine:
+                pygame.draw.rect(screen, WHITE, i)
             
-        # If the ball hits a wall
-        if ball.rect.colliderect(topWall) or ball.rect.colliderect(bottomWall):
-            bounceSound.play()
-            ball.hitWall()
-        
-        pygame.draw.rect(screen, WHITE, ball)
-        # ==== End Ball Logic =================================================================
+            # Drawing the player's new location
+            for paddle in [playerPaddleObj, opponentPaddleObj]:
+                pygame.draw.rect(screen, WHITE, paddle)
 
-        # Drawing the dotted line in the center
-        for i in centerLine:
-            pygame.draw.rect(screen, WHITE, i)
-        
-        # Drawing the player's new location
-        for paddle in [playerPaddleObj, opponentPaddleObj]:
-            pygame.draw.rect(screen, WHITE, paddle)
+            pygame.draw.rect(screen, WHITE, topWall)
+            pygame.draw.rect(screen, WHITE, bottomWall)
+            updateScore(lScore, rScore, screen, WHITE, scoreFont)
+            pygame.display.update()
+            clock.tick(60)
 
-        pygame.draw.rect(screen, WHITE, topWall)
-        pygame.draw.rect(screen, WHITE, bottomWall)
-        updateScore(lScore, rScore, screen, WHITE, scoreFont)
-        pygame.display.update()
-        clock.tick(60)
+            # Your code here to send an update to the server on your paddle's information,
+            # where the ball is and the current score.
+            # Feel free to change when the score is updated to suit your needs/requirements
+            client_paddle = [playerPaddleObj.rect.x, playerPaddleObj.rect.y, playerPaddleObj.moving]
+            oppo_paddle = [opponentPaddleObj.rect.x, opponentPaddleObj.rect.y, opponentPaddleObj.moving]
+            shared_ball = [ball.rect.x, ball.rect.y]
 
-        # Your code here to send an update to the server on your paddle's information,
-        # where the ball is and the current score.
-        # Feel free to change when the score is updated to suit your needs/requirements
-        client_paddle = [playerPaddleObj.rect.x, playerPaddleObj.rect.y, playerPaddleObj.moving]
-        oppo_paddle = [opponentPaddleObj.rect.x, opponentPaddleObj.rect.y, opponentPaddleObj.moving]
-        shared_ball = [ball.rect.x, ball.rect.y]
+            client_game_data = {    "playerPaddle": client_paddle,
+                                    "opPaddle" : oppo_paddle,
+                                    "ball": shared_ball,
+                                    "lScore": lScore,
+                                    "rScore": rScore,
+                                    "sync": sync } 
+            client.send(json.dumps(client_game_data).encode())  
 
-        client_game_data = {    "playerPaddle": client_paddle,
-                                "opPaddle" : oppo_paddle,
-                                "ball": shared_ball,
-                                "lScore": lScore,
-                                "rScore": rScore,
-                                "sync": sync } 
-        client.send(json.dumps(client_game_data).encode())  
+            # This number should be synchronized between you and your opponent.  If your number is larger
+            # then you are ahead of them in time, if theirs is larger, they are ahead of you, and you need to
+            # catch up (use their info)
+            sync += 1
 
-        # This number should be synchronized between you and your opponent.  If your number is larger
-        # then you are ahead of them in time, if theirs is larger, they are ahead of you, and you need to
-        # catch up (use their info)
-        sync += 1
+            # =========================================================================================
+            # Send your server update here at the end of the game loop to sync your game with your
+            #  opponent's game 
+            # Whoever is behind needs to be updated to reflect correct balls position
+            # Same logic with paddles
+            response = client.recv(1024).decode()
+            server_response = json.loads(response)
 
-        # =========================================================================================
-        # Send your server update here at the end of the game loop to sync your game with your
-        #  opponent's game 
-        # Whoever is behind needs to be updated to reflect correct balls position
-        # Same logic with paddles
-        response = client.recv(1024).decode()
-        server_response = json.loads(response)
+            playerPaddleObj.rect.x, playerPaddleObj.rect.y = server_response["playerPaddle"][0], server_response["playerPaddle"][1]
+            opponentPaddleObj.rect.x, opponentPaddleObj.rect.y = server_response["opPaddle"][0], server_response["opPaddle"][1]
+            opponentPaddleObj.moving = server_response["opPaddle"][2]
 
-        playerPaddleObj.rect.x, playerPaddleObj.rect.y = server_response["playerPaddle"][0], server_response["playerPaddle"][1]
-        opponentPaddleObj.rect.x, opponentPaddleObj.rect.y = server_response["opPaddle"][0], server_response["opPaddle"][1]
-        opponentPaddleObj.moving = server_response["opPaddle"][2]
+            ball.rect.x, ball.rect.y = server_response["ball"][0], server_response["ball"][1]
 
-        ball.rect.x, ball.rect.y = server_response["ball"][0], server_response["ball"][1]
+            lScore, rScore = server_response["lScore"], server_response["rScore"]
 
-        lScore, rScore = server_response["lScore"], server_response["rScore"]
+            sync = server_response["sync"]
 
-        sync = server_response["sync"]
+            # =========================================================================================
 
-        # =========================================================================================
+        else: 
+            # Ask if the user wants to play again
+            restartText = "Press 'R' to play again"
+            restartSurface = winFont.render(restartText, True, WHITE)
+            testRect = restartSurface.get_rect(center=(screenWidth/2, screenHeight/2 + 100))
+            screen.blit(restartSurface, testRect)
+            pygame.display.update()
+
+            # Check for user input to restart the game
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:
+                        # Call the playGame function to start a new game
+                        playGame(screenWidth, screenHeight, playerPaddle, client)
 
 # This is where you will connect to the server to get the info required to call the game loop.  Mainly
 # the screen width, height and player paddle (either "left" or "right")
