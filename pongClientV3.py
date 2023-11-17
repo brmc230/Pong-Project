@@ -229,31 +229,46 @@ def joinServer(ip:str, port:str, errorLabel:tk.Label, app:tk.Tk) -> None:
     # Create a socket and connect to the server
     # You don't have to use SOCK_STREAM, use what you think is best
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((ip, int(port)))
 
-    # Get the required information from your server (screen width, height & player paddle, "left or "right)
-    # Display that the game is waiting for the second player to join
-    errorLabel.config(text="Waiting for another player to join . . .")
-    errorLabel.update()
+    try:
+        client.connect((ip, int(port)))
+        client.settimeout(10)
+        # Get the required information from your server (screen width, height & player paddle, "left or "right)
+        # Display that the game is waiting for the second player to join
+        errorLabel.config(text="Waiting for another player to join . . .")
+        errorLabel.update()
 
-    # Receive the server response and collect the playGame data
-    response = client.recv(1024).decode()
-    join_server_data = json.loads(response)
+        # Receive the server response and collect the playGame data
+        response = client.recv(1024).decode()
+        join_server_data = json.loads(response)
 
-    # Set the variables according to the server message to fire the game
-    screenWidth = join_server_data["screen_width"]
-    screenHeight = join_server_data["screen_height"]
-    playerPaddle = join_server_data["player_paddle"]
+        # Set the variables according to the server message to fire the game
+        screenWidth = join_server_data["screen_width"]
+        screenHeight = join_server_data["screen_height"]
+        playerPaddle = join_server_data["player_paddle"]
 
-    # If you have messages you'd like to show the user use the errorLabel widget like so
-    errorLabel.config(text=f"Connection Accepted. Your input: IP: {ip}, Port: {port}")
-    # You may or may not need to call this, depending on how many times you update the label
-    errorLabel.update() 
-   
-    # Close this window and start the game with the info passed to you from the server
-    app.withdraw()     # Hides the window (we'll kill it later)
-    playGame(screenWidth, screenHeight, playerPaddle, client)  # User will be either left or right paddle ("left"|"right")
-    app.quit()         # Kills the window
+        # If you have messages you'd like to show the user use the errorLabel widget like so
+        errorLabel.config(text=f"Connection Accepted. Your input: IP: {ip}, Port: {port}")
+        # You may or may not need to call this, depending on how many times you update the label
+        errorLabel.update()
+
+        # Close this window and start the game with the info passed to you from the server
+        app.withdraw()     # Hides the window (we'll kill it later)
+        playGame(screenWidth, screenHeight, playerPaddle, client)  # User will be either left or right paddle ("left"|"right")
+        app.quit()         # Kills the window
+
+    # Handle cases where a connection could not be established and output to the client 
+    except ConnectionRefusedError:
+        errorLabel.config(text="Error: Unable to connect to the server. The server may be inactive or the provided information is incorrect. Please try again")
+        errorLabel.update()
+
+    except socket.timeout:
+        errorLabel.config(text="Error: Connection to the server timed out. Please try again")
+        errorLabel.update()
+
+    except Exception as e:
+        errorLabel.config(text=f"An unexpected error has occurred: {e}")
+        errorLabel.update()
 
 
 # This displays the opening screen, you don't need to edit this (but may if you like)
