@@ -114,10 +114,8 @@ clients_sockets[1].send(json.dumps(game_specs[1]).encode())
 game_state = {value: {"playerPaddle": [0, 0, ""], "opPaddle": [0, 0, ""], "ball": [0, 0], "lScore": 0, "rScore": 0, "sync": 0} for value in clients_sockets}
 
 connected = True
-
 # Handle the clients in threads to loop  through the game state until the game is over
-while connected is True:
-
+while connected:
     # Run the server update function in threads with a semaphore to ensure each clients message to the server
     #   is properly handled and the clients do not "race" to update the game state dictionary 
     threads = []
@@ -140,6 +138,5 @@ while connected is True:
 for socke in clients_sockets:
     socke.close()
 
-# Close the server socket when done 
+# Close the server socket 
 server_socket.close()
-

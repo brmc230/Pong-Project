@@ -34,4 +34,6 @@ Run the following line to install the required libraries for this project:
 
 Known Bugs
 ==========
-N/A
+When the clients are presented with the end of game message, if one client decides to disconnect the other is not aware if they press "R" to restart the game and nothing will happen
+If connections to the clients go wrong, the server side implementation does not 'smoothy' close down, errors are printed to the terminal and it is forcefully closed down
+
